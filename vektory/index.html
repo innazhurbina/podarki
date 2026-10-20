@@ -89,9 +89,16 @@ function obnovit() {
 function otpravit() {
   const pusto = VOPROSY.length - skolko();
   const dalshe = () => {
-    const dannye = JSON.stringify({o: otvety.map(x => x === null ? 0 : x)});
-    if (tg) tg.sendData(dannye);
-    else alert("Проверка вне Telegram. Ответы:\n" + dannye);
+    // 80 ответов по 2 бита (номер кнопки) → 20 байт → base64url, уходит в бот ссылкой ?start=v<код>
+    const bayty = new Uint8Array(20);
+    otvety.forEach((x, n) => {
+      const k = x === null ? 0 : VARIANTY.findIndex(v => v[1] === x);
+      bayty[n >> 2] |= k << (2 * (n % 4));
+    });
+    const kod = btoa(String.fromCharCode(...bayty)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const ssylka = "https://t.me/innazhurbina_bot?start=v" + kod;
+    if (tg) { tg.openTelegramLink(ssylka); tg.close(); }
+    else alert("Проверка вне Telegram. Ссылка:\n" + ssylka);
   };
   if (pusto > 0) {
     const vopr = `Не отмечено утверждений: ${pusto}. Они засчитаются как «не про меня». Отправить?`;
