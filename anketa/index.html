@@ -130,13 +130,13 @@ const LICHKA = "https://t.me/innazhurbina";
 const OTBIVKA = "Здравствуйте! Заполнил(а) анкету, хочу записаться на консультацию.";
 
 function tekstAnkety() {
-  const stroki = [OTBIVKA, ""];
+  const stroki = [OTBIVKA];
   VOPROSY.forEach((q, i) => {
     const v = otvety[q.id];
     const s = Array.isArray(v) ? v.join(", ") : String(v || "").trim();
     stroki.push(`${i + 1}. ${q.z}\n${s || "(без ответа)"}`);
   });
-  return stroki.join("\n").slice(0, 4000);  // в одно сообщение Telegram помещается 4096 знаков
+  return stroki.join("\n\n").slice(0, 4000);  // в одно сообщение Telegram помещается 4096 знаков
 }
 
 function otpravit() {
