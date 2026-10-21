@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Анкета перед консультацией</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --fon: var(--tg-theme-bg-color, #F8F5F1);
+    --tekst: var(--tg-theme-text-color, #22312F);
+    --tih: var(--tg-theme-hint-color, #7D8C8A);
+    --karta: var(--tg-theme-secondary-bg-color, #ffffff);
+    --akcent: #2A5D67;
+    --akcent-svet: #DFEBEC;
+    --liniya: rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--fon); color: var(--tekst);
+         font: 16px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  .shapka { padding: 16px 16px 4px; max-width: 640px; margin: 0 auto; }
+  .shapka h1 { font-size: 20px; margin: 0 0 8px; }
+  .shapka p { margin: 0 0 6px; color: var(--tih); font-size: 14px; }
+  main { padding: 4px 16px 110px; max-width: 640px; margin: 0 auto; }
+  .vopros { background: var(--karta); border-radius: 14px; padding: 14px; margin: 10px 0; border: 1px solid var(--liniya); }
+  .vopros .zag { font-weight: 600; margin: 0 0 8px; }
+  .vopros .podsk { color: var(--tih); font-size: 13px; margin: -4px 0 8px; }
+  input[type=text], textarea { width: 100%; border: 1px solid var(--liniya); border-radius: 10px; padding: 10px;
+    font: inherit; background: var(--fon); color: var(--tekst); }
+  textarea { min-height: 84px; resize: vertical; }
+  .varianty { display: flex; flex-wrap: wrap; gap: 6px; }
+  .varianty button { border: 1px solid var(--liniya); background: transparent; color: var(--tekst);
+    border-radius: 18px; padding: 8px 12px; font-size: 14px; cursor: pointer; }
+  .varianty button.vybor { background: var(--akcent); border-color: var(--akcent); color: #fff; }
+  .soglasie { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+  .soglasie input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--akcent); }
+  .oshibka { color: #b3261e; font-size: 13px; margin-top: 6px; display: none; }
+  .niz { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px 16px; background: var(--fon); border-top: 1px solid var(--liniya); }
+  .niz button { width: 100%; max-width: 640px; display: block; margin: 0 auto; border: 0; border-radius: 12px;
+    padding: 14px; font-size: 16px; font-weight: 600; background: var(--akcent); color: #fff; }
+  .v-telegram .niz { display: none; }
+  .v-telegram main { padding-bottom: 24px; }
+  .spasibo { text-align: center; padding: 60px 24px; display: none; }
+  .spasibo h2 { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+<div class="shapka" id="shapka">
+  <h1>Анкета перед консультацией</h1>
+  <p>Эта анкета поможет мне подготовиться к нашей встрече. На диагностике мы разберём Ваш запрос, и я скажу, какой формат подойдёт: личные сессии или работа в группе.</p>
+  <p>Правильных ответов здесь нет. Отвечайте так, как есть сейчас. Всё, что Вы напишете, вижу только я.</p>
+</div>
+<main id="forma"></main>
+<div class="spasibo" id="spasibo"><h2>Спасибо! 🤍</h2><p>Сейчас откроется чат со мной, анкета уже вписана. Нажмите «Отправить», и я отвечу Вам.</p></div>
+<div class="niz"><button id="otpravit">Отправить анкету Инне</button></div>
+
+<script>
+// Вопросы из anketa.md (черновик 13.10.2026). Тип: t — короткий, d — длинный, 1 — один вариант, m — несколько (max — сколько можно)
+const VOPROSY = [
+  {id: "imya", z: "Как Вас зовут?", t: "t", nado: true},
+  {id: "svyaz", z: "Как с Вами связаться?", p: "Ник в Telegram или номер телефона", t: "t"},
+  {id: "vozrast", z: "Сколько Вам лет?", t: "1", v: ["до 25", "25-34", "35-44", "45-54", "55 и старше"]},
+  {id: "bespokoit", z: "Что сейчас беспокоит больше всего?", p: "Можно выбрать до трёх", t: "m", max: 3,
+   v: ["отношения с партнёром", "нет отношений, хочу их построить", "расставание или развод", "отношения с детьми",
+       "отношения с родителями", "деньги и работа", "отношение к себе, уверенность", "тело и внешность",
+       "тревога, усталость, нет сил", "не понимаю, чего хочу", "другое"]},
+  {id: "situaciya", z: "Опишите ситуацию своими словами в двух-трёх предложениях", t: "d"},
+  {id: "davno", z: "Как давно это длится?", t: "1", v: ["меньше месяца", "несколько месяцев", "больше года", "сколько себя помню"]},
+  {id: "ranshe", z: "Бывало ли такое раньше, с другими людьми или в других обстоятельствах?", t: "1",
+   v: ["да, ситуация повторяется", "что-то похожее было", "нет, это впервые"]},
+  {id: "proboval", z: "Что Вы уже пробовали?", p: "Можно несколько", t: "m", max: 6,
+   v: ["ничего, это первый шаг", "говорила с близкими", "читала книги, смотрела видео", "практики, медитации",
+       "работа с психологом", "группа, курс или марафон"]},
+  {id: "ne_zrya", z: "Что должно измениться, чтобы Вы сказали «это было не зря»?", t: "d"},
+  {id: "format", z: "Какой формат Вам ближе?", t: "1", v: ["личные встречи с психологом", "группа с ежедневной практикой", "пока не знаю, хочу совет"]},
+  {id: "vremya", z: "Сколько времени Вы готовы уделять себе?", t: "1", v: ["20-30 минут каждый день", "час-два в неделю", "пока трудно сказать"]},
+  {id: "zdorove", z: "Есть ли что-то, что мне важно знать о Вашем здоровье?",
+   p: "Например, Вы сейчас наблюдаетесь у врача или принимаете назначенные лекарства. Можно пропустить.", t: "t"},
+  {id: "kogda", z: "Когда Вам удобно созвониться?", p: "Можно несколько", t: "m", max: 4, v: ["будни утром", "будни днём", "будни вечером", "выходные"]},
+];
+const otvety = {};
+const tg = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData ? window.Telegram.WebApp : null;
+const polz = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+const forma = document.getElementById("forma");
+
+VOPROSY.forEach((q, i) => {
+  const d = document.createElement("div");
+  d.className = "vopros";
+  d.innerHTML = `<div class="zag">${i + 1}. ${q.z}</div>` + (q.p ? `<div class="podsk">${q.p}</div>` : "");
+  if (q.t === "t" || q.t === "d") {
+    const pole = document.createElement(q.t === "t" ? "input" : "textarea");
+    if (q.t === "t") pole.type = "text";
+    if (q.id === "imya" && polz) pole.value = [polz.first_name, polz.last_name].filter(Boolean).join(" ");
+    if (q.id === "svyaz" && polz && polz.username) pole.value = "@" + polz.username;
+    otvety[q.id] = pole.value;
+    pole.oninput = () => { otvety[q.id] = pole.value.trim(); };
+    d.appendChild(pole);
+  } else {
+    const box = document.createElement("div");
+    box.className = "varianty";
+    otvety[q.id] = q.t === "m" ? [] : "";
+    q.v.forEach(v => {
+      const b = document.createElement("button");
+      b.textContent = v;
+      b.onclick = () => {
+        if (q.t === "1") {
+          box.querySelectorAll("button").forEach(x => x.classList.remove("vybor"));
+          b.classList.add("vybor"); otvety[q.id] = v;
+        } else {
+          const s = otvety[q.id], k = s.indexOf(v);
+          if (k >= 0) { s.splice(k, 1); b.classList.remove("vybor"); }
+          else if (s.length < q.max) { s.push(v); b.classList.add("vybor"); }
+        }
+      };
+      box.appendChild(b);
+    });
+    d.appendChild(box);
+  }
+  if (q.nado) d.insertAdjacentHTML("beforeend", `<div class="oshibka" id="osh_${q.id}">Заполните, пожалуйста</div>`);
+  forma.appendChild(d);
+});
+forma.insertAdjacentHTML("beforeend",
+  `<div class="vopros"><label class="soglasie"><input type="checkbox" id="soglasie">
+   <span>Я даю согласие на обработку моих данных для связи и подготовки к консультации.</span></label>
+   <div class="oshibka" id="osh_soglasie">Без согласия я не смогу принять анкету</div></div>`);
+
+// Анкета уходит Инне в личку: открываем чат с ней, текст уже вписан, человек сам нажимает «Отправить» (Инна 21.10.2026)
+const LICHKA = "https://t.me/innazhurbina";
+const OTBIVKA = "Здравствуйте! Заполнил(а) анкету, хочу записаться на консультацию.";
+
+function tekstAnkety() {
+  const stroki = [OTBIVKA, ""];
+  VOPROSY.forEach((q, i) => {
+    const v = otvety[q.id];
+    const s = Array.isArray(v) ? v.join(", ") : String(v || "").trim();
+    stroki.push(`${i + 1}. ${q.z}\n${s || "(без ответа)"}`);
+  });
+  return stroki.join("\n").slice(0, 4000);  // в одно сообщение Telegram помещается 4096 знаков
+}
+
+function otpravit() {
+  let ok = true;
+  VOPROSY.filter(q => q.nado).forEach(q => {
+    const pusto = !String(otvety[q.id] || "").trim();
+    document.getElementById("osh_" + q.id).style.display = pusto ? "block" : "none";
+    if (pusto) ok = false;
+  });
+  const sogl = document.getElementById("soglasie").checked;
+  document.getElementById("osh_soglasie").style.display = sogl ? "none" : "block";
+  if (!ok || !sogl) { if (tg) tg.HapticFeedback.notificationOccurred("error"); return; }
+  const ssylka = LICHKA + "?text=" + encodeURIComponent(tekstAnkety());
+  document.getElementById("shapka").style.display = "none";
+  forma.style.display = "none";
+  document.getElementById("spasibo").style.display = "block";
+  if (tg) { tg.MainButton.hide(); setTimeout(() => { tg.openTelegramLink(ssylka); tg.close(); }, 1500); }
+  else { setTimeout(() => { window.location.href = ssylka; }, 1500); }
+}
+
+if (tg) {
+  document.body.classList.add("v-telegram");
+  tg.ready(); tg.expand();
+  tg.MainButton.setParams({text: "Отправить анкету Инне", color: "#2A5D67", text_color: "#ffffff"});
+  tg.MainButton.onClick(otpravit);
+  tg.MainButton.show();
+}
+document.getElementById("otpravit").onclick = otpravit;
+</script>
+</body>
+</html>
