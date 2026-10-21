@@ -8,12 +8,12 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
-    --fon: var(--tg-theme-bg-color, #fbf8f4);
-    --tekst: var(--tg-theme-text-color, #2d2a26);
-    --tih: var(--tg-theme-hint-color, #8a8178);
+    --fon: var(--tg-theme-bg-color, #F8F5F1);
+    --tekst: var(--tg-theme-text-color, #22312F);
+    --tih: var(--tg-theme-hint-color, #7D8C8A);
     --karta: var(--tg-theme-secondary-bg-color, #ffffff);
-    --akcent: #b5651d;
-    --akcent-svet: #f3e3d3;
+    --akcent: #2A5D67;
+    --akcent-svet: #DFEBEC;
     --liniya: rgba(0,0,0,0.08);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -112,7 +112,7 @@ if (tg) {
   document.body.classList.add("v-telegram");
   tg.ready();
   tg.expand();
-  tg.MainButton.setParams({color: "#b5651d", text_color: "#ffffff"});
+  tg.MainButton.setParams({color: "#2A5D67", text_color: "#ffffff"});
   tg.MainButton.onClick(otpravit);
   tg.MainButton.show();
 }
